@@ -8,13 +8,13 @@ function authenticate(userId, email) {
         email: email,
     };
 
-    //Options for the token (optional)
-    // const options = {
-    //     expiresIn: '1h', // Token expiration time (e.g., 1 hour)
-    // };
+    //Setting token expiry to 5 minutes
+    const options = {
+        expiresIn: '5m', 
+    };
 
     // Generate the JWT token
-    const token = jwt.sign(payload, secretKey);
+    const token = jwt.sign(payload, secretKey, options);
 
     console.log('JWT Token:', token);
     return token;

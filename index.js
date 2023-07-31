@@ -6,7 +6,7 @@ const { signup } = require('./controllers/public/signup');
 const app = express();
 const { connectDB } = require('./db');
 const Booking = require('./models/bookings');
-const { viewTravelCatalog, postMyProperty, viewMyBookings, viewAllBookings, cancelBooking, addPermissions, bookMyTravel } = require('./controllers/protected/api');
+const { viewTravelCatalog, postMyProperty, viewMyBookings, viewAllBookings, cancelBooking, addPermissions, bookMyTravel, viewMyProperties } = require('./controllers/protected/api');
 const PropertyImage = require('./models/property_images');
 const multer = require('multer');
 const { authorize } = require('./services/authorization');
@@ -24,6 +24,10 @@ app.use(cookieParser());
 
 app.post('/signup', async (req, res) => {  
   const response = await signup(req.body.username, req.body.email, req.body.password, req.body.user_type);
+  if (!response) {
+    res.json({error: 'Invalid email or password'});
+    return;
+  }
   //Clearing the existing session
   res.clearCookie('token');
   //Setting jwt token in a cookie to use it in subsequent requests
@@ -44,7 +48,7 @@ app.post('/login', async (req, res) => {
   res.json({ token: token });
 });
 
-app.get('/viewTravelCatalogue', authorize, async (req, res, next) => {
+app.get('/viewTravelCatalogue', authorize, async (req, res) => {
     const travelCatalogues = await viewTravelCatalog();
     if (!travelCatalogues) {
       res.json({response: 'No property found'});
@@ -53,7 +57,7 @@ app.get('/viewTravelCatalogue', authorize, async (req, res, next) => {
     res.json({details: travelCatalogues});
 })
 
-app.post('/viewMyBookings', authorize, async (req, res) => {
+app.get('/viewMyBookings', authorize, async (req, res) => {
     const bookings = await viewMyBookings(req.user_id);
     if (!bookings) {
       res.json({response: 'Currently you dont have any bookings'});
@@ -64,7 +68,7 @@ app.post('/viewMyBookings', authorize, async (req, res) => {
 
 app.post('/bookMyTravel', authorize, async (req, res) => {
   if (!await bookMyTravel(req.body.property_id, req.user_id)) {
-      res.json('Unable to book');
+      res.json({error:'Unable to book'});
       return;
   } 
   res.json({success: 'Travel Booked Successfully'});
@@ -86,6 +90,7 @@ app.post('/cancelBooking', authorize, async (req, res) => {
     }
     res.json({success: 'Booking cancelled successfully'});
 })
+
 app.post('/addProperty', authorize, upload.array('images', 3), async (req, res) => {
     const images = req.files.map((file) => ({
       imageBuffer: file.buffer,
@@ -95,6 +100,15 @@ app.post('/addProperty', authorize, upload.array('images', 3), async (req, res) 
     res.json({success: 'Your property uploaded successfully'});
 })
 
+app.get('/viewMyProperties', authorize, async (req, res) => {
+  const response = await viewMyProperties(req.user_id);
+  if (!response) {
+    res.json({response: 'No property uploaded'});
+    return;
+  } 
+  res.json({propertyDetails: response});
+
+})
 app.post('/addPermissions', authorize, async (req, res) => {
     if (!await addPermissions(req.body.action, req.body.user_type)) {
        res.json({error: 'Unable to add permission'});

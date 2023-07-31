@@ -22,7 +22,7 @@ async function addPermissions(action, userType) {
 
 async function viewTravelCatalog() {
     const travelCatalogues =  await TravelCatalogue.find();
-    if (!travelCatalogues) {
+    if (travelCatalogues.length == 0) {
         return [];
     }
     let allTravelDetails = [];
@@ -61,6 +61,18 @@ async function postMyProperty(userId, propertyPlace, propertyImages, propertyPri
   }
 }
 
+async function viewMyProperties(userId) {
+    const properties = await TravelCatalogue.find({owner_id: userId});
+    if (properties.length == 0) {
+        return false;
+    } 
+    let details = [];
+    for (const property of properties) {
+        details.push({place: property.place, price: property.price, isBooked: property.is_booked})
+    }
+    return details;
+}
+
 async function bookMyTravel(propertyId, userId) {
     const property = await TravelCatalogue.findById(propertyId);
     if (!property || property.is_booked) {
@@ -81,8 +93,8 @@ async function bookMyTravel(propertyId, userId) {
 
 async function viewMyBookings(userId) {
     const myBookings = await Booking.find({user_id: userId}).populate('property_id');
-    if (!myBookings) {
-        return [];
+    if (myBookings.length == 0) {
+        return false;
     }
     let details = [];
     for (const myBooking of myBookings) {
@@ -99,8 +111,8 @@ async function viewMyBookings(userId) {
 
 async function viewAllBookings() {
     const allBookings = await Booking.find().populate('property_id').populate('user_id');
-    if (!allBookings) {
-        return [];
+    if (allBookings.length == 0) {
+        return false;
     }
     let details = [];
     for (const booking of allBookings) {
@@ -120,28 +132,19 @@ async function viewAllBookings() {
 async function cancelBooking(bookingId, userId) {
      
      const user = await User.findById(userId);
-     const booking = await Booking.findOne({_id: bookingId}).select({_id: 0, property_id: 1});
-     if (user.user_type == 'admin') {
-        Booking.findByIdAndDelete(bookingId).then((doc) => {
-            if (doc) {
-                console.log('Document deleted');
-            } else {
-                console.log('Document not found');
-                return false;
-            }
-        })
-     } else {
-        Booking.findOneAndDelete({_id: bookingId, user_id: userId}).then((doc) => {
-            if (doc) {
-                console.log('Document deleted');
-            } else {
-                console.log('Document not found');
-                return false;
-            }
-        })
-     }
      
-     await TravelCatalogue.findByIdAndUpdate(booking.property_id, {is_booked: false});
+     let booking;
+     if (user.user_type == 'admin') {
+        booking = await Booking.findById(bookingId);
+     } else {
+        booking = await Booking.findOne({_id: bookingId, user_id: userId});
+     }
+     if (!booking) {
+        return false;
+     }
+     const propertyId = booking.property_id;
+     await booking.deleteOne();
+     await TravelCatalogue.findByIdAndUpdate(propertyId, {is_booked: false});
      return true;
 }
 
@@ -152,5 +155,6 @@ module.exports = {
     viewMyBookings, 
     viewAllBookings, 
     cancelBooking, 
+    viewMyProperties,
     addPermissions 
 };

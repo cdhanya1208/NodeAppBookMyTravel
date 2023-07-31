@@ -11,7 +11,13 @@ async function authorize(req, res, next) {
         req.headers['Authorization'] = `Bearer ${token}`;
     }
     const secretKey = process.env.JWT_SECRET_KEY; 
-    const decodedToken = jwt.verify(req.headers['Authorization'].substring(7), secretKey);
+    let decodedToken;
+    try {
+        decodedToken = jwt.verify(req.headers['Authorization'].substring(7), secretKey);
+    } catch (error) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+    }
     const userType = await User.findById(decodedToken.userId).select({user_type: 1, _id: 0});
     const allowedUserTypes = await Permission.findOne({action: req.url.slice(1)}).select({user_types: 1, _id: 0});
 

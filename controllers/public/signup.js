@@ -3,8 +3,18 @@ const { authenticate } = require('../../services/authentication');
 const User = require('../../models/users');
 const nodemailer = require('nodemailer');
 const { admin } = require('../../services/firebase_authentication');
+require('dotenv').config();
 
 async function signup(name, email, password, userType){
+    //Check if email and password is valid
+    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      return false;
+    }
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,50}$/;
+    if (!passwordRegex.test(password)) {
+      return false;
+    }
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -26,12 +36,12 @@ async function signup(name, email, password, userType){
 
     // Sending verification email
     const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
       secure: false, 
       auth: {
-        user: 'cdhanya1208@gmail.com',
-        pass: 'huaszyshattgpzwx',
+        user: process.env.SMTP_USERNAME,
+        pass: process.env.SMTP_PASSWORD,
       },
     });
 

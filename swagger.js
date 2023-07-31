@@ -3,7 +3,7 @@ const swaggerDefinition = {
     info: {
       title: 'BookMyTravel API', 
       version: '1.0.0', 
-      description: 'Documentation for BookMyTravel API', 
+      description: 'Documentation for BookMyTravel Application', 
     },
     servers: [
       {
