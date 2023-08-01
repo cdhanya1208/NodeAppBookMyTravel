@@ -7,8 +7,8 @@ const swaggerDefinition = {
     },
     servers: [
       {
-        url: 'http://localhost:3000', 
-        description: 'Local server', 
+        url: 'https://book-my-travel.onrender.com/', 
+        description: 'Render service', 
       },
     ],
   };
